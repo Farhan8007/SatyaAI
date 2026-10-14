@@ -55,6 +55,16 @@ async def toggle_status(user_id: str, is_active: bool, admin: dict = Depends(req
     if not target:
         raise HTTPException(404, "User not found")
 
+    if user_id == admin["sub"] and not is_active:
+        raise HTTPException(status_code=400, detail="You cannot suspend your own administrator account.")
+
+    await database.users.update_one({"id": user_id}, {"$set": {"is_active": is_active}})
+    action = "ACTIVATE_USER" if is_active else "SUSPEND_USER"
+    await record_audit_log(
+        user_id=admin["sub"], user_name=admin["name"], role=admin["role"],
+        ip_address="internal", device="api", action=action,
+        status="SUCCESS",
+    )
     updated = await database.users.find_one({"id": user_id})
     return UserOut(**updated)
 

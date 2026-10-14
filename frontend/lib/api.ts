@@ -228,6 +228,22 @@ export async function unlockPaper(id: string): Promise<{ detail: string; sha256_
   return authFetch(`/api/papers/${id}/unlock`, { method: "POST" });
 }
 
+export function paperDownloadUrl(paperId: string): string {
+  return `${API_BASE}/api/papers/${paperId}/download`;
+}
+
+export async function downloadPaper(paperId: string): Promise<Blob> {
+  const token = typeof window !== "undefined" ? window.localStorage.getItem("satya_token") : null;
+  const res = await fetch(`${API_BASE}/api/papers/${paperId}/download`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new ApiError(body?.detail || "Failed to download paper", res.status);
+  }
+  return res.blob();
+}
+
 // ---------------------------------------------------------------------------
 // Audit Logs
 // ---------------------------------------------------------------------------

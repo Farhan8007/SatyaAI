@@ -11,3 +11,7 @@ out/
 
 # OS
 .DS_Store
+backend/keys/
+
+# Added by ggshield
+.cache_ggshield
