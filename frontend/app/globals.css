@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-ink-950 text-ink_text-900 font-body antialiased;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply relative rounded-2xl border border-ink-700 bg-ink-900 shadow-card;
+  }
+
+  .glass-card:hover {
+    @apply shadow-card-lg;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-signal px-5 py-3
+           font-medium text-white transition-all duration-200 hover:bg-signal-dark
+           hover:shadow-card-lg active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ink-700
+           bg-ink-900 px-5 py-3 font-medium text-ink_text-900 transition-all duration-200
+           hover:border-signal/40 hover:bg-ink-800 active:scale-[0.98];
+  }
+
+  .risk-pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold;
+  }
+}
