@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Upload, Shield, Check, X, Loader2, FileText, Unlock } from "lucide-react";
+import { Upload, Shield, Check, X, Loader2, FileText, Unlock, Download } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import ErrorState from "@/components/ErrorState";
-import { getPapers, approvePaper, rejectPaper, uploadPaper, unlockPaper, Paper, ApiError } from "@/lib/api";
+import { getPapers, approvePaper, rejectPaper, uploadPaper, unlockPaper, downloadPaper, Paper, ApiError } from "@/lib/api";
 
 const ROLE_CAN_APPROVE = ["moderator", "administrator"];
 const ROLE_CAN_UPLOAD = ["paper_setter", "administrator"];
@@ -57,6 +57,26 @@ export default function PapersPage() {
       setUnlockedIds((prev) => new Set(prev).add(id));
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : "Couldn't unlock this paper.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDownload(paper: Paper) {
+    setBusyId(paper.id);
+    setActionError(null);
+    try {
+      const blob = await downloadPaper(paper.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${paper.title.replace(/\s+/g, "_")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : "Couldn't download this paper.");
     } finally {
       setBusyId(null);
     }
@@ -168,11 +188,16 @@ export default function PapersPage() {
             )}
 
             {paper.status === "approved" && ROLE_CAN_UNLOCK.includes(role) && (
-              <div className="mt-4">
-                {unlockedIds.has(paper.id) ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-intel/15 px-3 py-1.5 text-xs font-medium text-intel">
-                    <Unlock className="h-3 w-3" /> Unlocked for secure download
-                  </span>
+              <div className="mt-4 flex items-center gap-2">
+                {paper.unlock_time || unlockedIds.has(paper.id) ? (
+                  <button
+                    onClick={() => handleDownload(paper)}
+                    disabled={busyId === paper.id}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-intel/15 px-3 py-1.5 text-xs font-medium text-intel hover:bg-intel/25 transition-colors"
+                  >
+                    {busyId === paper.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                    Download Decrypted Paper
+                  </button>
                 ) : (
                   <button
                     onClick={() => handleUnlock(paper.id)}
@@ -208,6 +233,7 @@ function UploadModal({ onClose, onUploaded }: { onClose: () => void; onUploaded:
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
   const [examDate, setExamDate] = useState("");
+  const [examCentre, setExamCentre] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [modalError, setModalError] = useState("");
@@ -221,6 +247,9 @@ function UploadModal({ onClose, onUploaded }: { onClose: () => void; onUploaded:
     formData.append("title", title);
     formData.append("subject", subject);
     formData.append("exam_date", new Date(examDate).toISOString());
+    if (examCentre.trim()) {
+      formData.append("exam_centre", examCentre.trim());
+    }
     formData.append("file", file);
     try {
       const result = await uploadPaper(formData);
@@ -263,6 +292,12 @@ function UploadModal({ onClose, onUploaded }: { onClose: () => void; onUploaded:
             value={examDate}
             onChange={(e) => setExamDate(e.target.value)}
             className="w-full rounded-xl border border-ink-700 bg-ink-800 px-4 py-2.5 text-sm text-ink_text-900 outline-none focus:border-signal/50"
+          />
+          <input
+            placeholder="Assigned Exam Centre (e.g. Centre-Mumbai-01)"
+            value={examCentre}
+            onChange={(e) => setExamCentre(e.target.value)}
+            className="w-full rounded-xl border border-ink-700 bg-ink-800 px-4 py-2.5 text-sm text-ink_text-900 placeholder:text-ink_text-300 outline-none focus:border-signal/50"
           />
           <input
             required

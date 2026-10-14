@@ -15,6 +15,7 @@ class PaperBase(BaseModel):
     subject: str
     exam_date: datetime
     exam_centre: Optional[str] = None
+    unlock_window_minutes: Optional[int] = 30
 
 
 class PaperCreate(PaperBase):
